@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 
 const API = 'https://ironwatch-3906.onrender.com/api/v1'
-const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages'
+const ANTHROPIC_API = 'https://ironwatch-3906.onrender.com/api/v1/chat'
 const MODEL = 'claude-sonnet-4-20250514'
 
 const VERDICT = {
@@ -69,14 +69,15 @@ async function callAI(messages, systemPrompt) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 1000,
       system: systemPrompt,
-      messages,
+      messages: messages.map(m => ({
+        role: m.role,
+        content: typeof m.content === 'string' ? m.content : m.content,
+      })),
     }),
   })
   const data = await res.json()
-  return data.content?.[0]?.text || 'No response received.'
+  return data.content || 'No response received.'
 }
 
 function ChatOverlay({ lot, onClose }) {
