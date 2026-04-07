@@ -200,8 +200,10 @@ function ChatOverlay({ lot, onClose, token }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [expandedPhoto, setExpandedPhoto] = useState(null)
   const bottomRef = useRef(null)
   const system = dealerPromptForLot(lot)
+  const images = lot.image_urls || []
 
   useEffect(() => {
     setLoading(true)
@@ -217,14 +219,15 @@ function ChatOverlay({ lot, onClose, token }) {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, loading])
   useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape') onClose() }
+    function onKey(e) { if (e.key === 'Escape') { if (expandedPhoto !== null) setExpandedPhoto(null); else onClose() } }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [onClose, expandedPhoto])
 
-  async function send() {
-    if (!input.trim() || loading) return
-    const userMsg = { role: 'user', content: input.trim() }
+  async function send(overrideContent) {
+    const content = overrideContent || input.trim()
+    if (!content || loading) return
+    const userMsg = { role: 'user', content }
     const newMessages = [...messages, userMsg]
     setMessages(newMessages)
     setInput('')
@@ -234,11 +237,47 @@ function ChatOverlay({ lot, onClose, token }) {
     setLoading(false)
   }
 
+  async function askAboutPhoto(imgUrl, imgIndex) {
+    if (loading) return
+    setLoading(true)
+    const userContent = [
+      { type: 'image', source: { type: 'url', url: imgUrl } },
+      { type: 'text', text: `This is photo ${imgIndex + 1} of the ${lot.title}. Give me your honest assessment of what you can see — condition, any obvious issues, wear, damage, or anything that affects the value. Be specific about what you can actually see in the image.` }
+    ]
+    const displayMsg = { role: 'user', content: `[Photo ${imgIndex + 1}] What can you see in this image?`, isPhoto: true, imgUrl }
+    const newMessages = [...messages, displayMsg]
+    setMessages(newMessages)
+    const apiMessages = messages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content : m.content }))
+    apiMessages.push({ role: 'user', content: userContent })
+    const reply = await callAI(apiMessages, system)
+    setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+    setLoading(false)
+    setExpandedPhoto(null)
+  }
+
   const v = VERDICT[lot.verdict] || VERDICT['Watch']
   const spread = lot.current_bid > 0 && lot.market_price_low ? Math.round((lot.market_price_low / lot.current_bid - 1) * 100) : null
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0b0d0c', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
+
+      {/* Expanded photo overlay */}
+      {expandedPhoto !== null && (
+        <div onClick={() => setExpandedPhoto(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 2000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 }}>
+          <img src={images[expandedPhoto]} alt="" style={{ maxWidth: '90%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 4 }} onClick={e => e.stopPropagation()} />
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={e => { e.stopPropagation(); askAboutPhoto(images[expandedPhoto], expandedPhoto) }} disabled={loading} style={{ background: IDS_GREEN, color: '#fff', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 13, padding: '10px 20px', borderRadius: 4, border: 'none', cursor: 'pointer', letterSpacing: '0.05em' }}>
+              ASK DEALER ABOUT THIS PHOTO
+            </button>
+            <button onClick={() => setExpandedPhoto(null)} style={{ background: 'transparent', border: '1px solid #2a2e29', color: '#6b6f67', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, padding: '10px 16px', borderRadius: 4, cursor: 'pointer' }}>
+              CLOSE
+            </button>
+          </div>
+          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#3a3e38' }}>Photo {expandedPhoto + 1} of {images.length} · Click outside to close · ESC to close</div>
+        </div>
+      )}
+
+      {/* Header */}
       <div style={{ borderBottom: '1px solid #1e2220', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <button onClick={onClose} style={{ background: 'transparent', border: `1px solid #1e2220`, color: '#6b6f67', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, padding: '6px 12px', borderRadius: 3, cursor: 'pointer' }}>← BACK</button>
         <div style={{ width: 1, height: 20, background: '#1e2220' }} />
@@ -253,20 +292,51 @@ function ChatOverlay({ lot, onClose, token }) {
         </div>
         <a href={lot.url} target="_blank" rel="noopener noreferrer" style={{ background: IDS_GREEN, color: '#fff', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 3, textDecoration: 'none', letterSpacing: '0.05em', flexShrink: 0 }}>GO TO AUCTION →</a>
       </div>
+
+      {/* Photo strip */}
+      {images.length > 0 && (
+        <div style={{ borderBottom: '1px solid #1e2220', padding: '10px 16px', display: 'flex', gap: 8, overflowX: 'auto', flexShrink: 0, background: '#0d0f0c' }}>
+          {images.map((img, i) => (
+            <div key={i} onClick={() => setExpandedPhoto(i)} style={{ position: 'relative', flexShrink: 0, width: 100, height: 70, borderRadius: 4, overflow: 'hidden', cursor: 'pointer', border: `1px solid #2a2e29`, transition: 'border-color 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = IDS_GREEN}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#2a2e29'}
+            >
+              <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }} onError={e => e.target.style.display='none'} />
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0)', transition: 'background 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0)' }}
+              >
+                <span style={{ color: '#fff', fontSize: 16, opacity: 0 }} className="zoom">⤢</span>
+              </div>
+              <div style={{ position: 'absolute', bottom: 3, right: 4, fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: 'rgba(255,255,255,0.6)' }}>{i + 1}</div>
+            </div>
+          ))}
+          <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 4 }}>
+            <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#3a3e38', whiteSpace: 'nowrap' }}>Click to expand · Ask dealer</span>
+          </div>
+        </div>
+      )}
+
+      {/* Messages */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', maxWidth: 760, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         {messages.length === 0 && loading && <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#3a3e38', letterSpacing: '0.08em', paddingTop: 20 }}>DEALER IS ASSESSING THE LOT...</div>}
         {messages.map((m, i) => (
           <div key={i} style={{ marginBottom: 20 }}>
             <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: m.role === 'user' ? '#60a5fa' : IDS_GREEN, letterSpacing: '0.08em', marginBottom: 6 }}>{m.role === 'user' ? 'YOU' : 'DEALER AGENT'}</div>
-            <div style={{ fontSize: 14, lineHeight: 1.65, color: m.role === 'user' ? '#9a9e96' : '#dde0d8', whiteSpace: 'pre-wrap' }}>{m.content}</div>
+            {m.isPhoto && m.imgUrl && (
+              <img src={m.imgUrl} alt="" style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 3, marginBottom: 6, display: 'block', opacity: 0.8 }} />
+            )}
+            <div style={{ fontSize: 14, lineHeight: 1.65, color: m.role === 'user' ? '#9a9e96' : '#dde0d8', whiteSpace: 'pre-wrap' }}>{typeof m.content === 'string' ? m.content : ''}</div>
           </div>
         ))}
         {loading && messages.length > 0 && <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#3a3e38', letterSpacing: '0.08em' }}>THINKING...</div>}
         <div ref={bottomRef} />
       </div>
+
+      {/* Input */}
       <div style={{ borderTop: '1px solid #1e2220', padding: '12px 16px', display: 'flex', gap: 10, maxWidth: 760, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()} placeholder="Ask the dealer anything about this lot..." style={{ flex: 1, background: '#161a15', border: '1px solid #2a2e29', borderRadius: 4, padding: '10px 14px', color: '#dde0d8', fontSize: 14, fontFamily: 'Barlow, sans-serif', outline: 'none' }} />
-        <button onClick={send} disabled={loading || !input.trim()} style={{ background: loading || !input.trim() ? '#1c211b' : IDS_GREEN, color: loading || !input.trim() ? '#3a3e38' : '#fff', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 13, padding: '10px 20px', borderRadius: 4, border: 'none', cursor: 'pointer', letterSpacing: '0.05em' }}>SEND</button>
+        <button onClick={() => send()} disabled={loading || !input.trim()} style={{ background: loading || !input.trim() ? '#1c211b' : IDS_GREEN, color: loading || !input.trim() ? '#3a3e38' : '#fff', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 13, padding: '10px 20px', borderRadius: 4, border: 'none', cursor: 'pointer', letterSpacing: '0.05em' }}>SEND</button>
       </div>
     </div>
   )
@@ -322,7 +392,7 @@ function SettingsPanel({ onClose, token }) {
     setScanning(true)
     setScanResult(null)
     try {
-      const res = await fetch(`${API}/scraper/run`, { method: 'GET' })
+      const res = await fetch(`${API}/scraper/run`)
       const data = await res.json()
       setScanResult({ success: true, message: `Scan complete — ${data.lots_found || 0} lots found, ${data.lots_new || 0} new` })
     } catch (err) {
@@ -332,7 +402,7 @@ function SettingsPanel({ onClose, token }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#0b0d0c', zIndex: 1000, display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div style={{ position: 'fixed', inset: 0, background: '#0b0d0c', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
       <div style={{ borderBottom: '1px solid #1e2220', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #1e2220', color: '#6b6f67', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, padding: '6px 12px', borderRadius: 3, cursor: 'pointer' }}>← BACK</button>
         <div style={{ width: 1, height: 20, background: '#1e2220' }} />
@@ -342,7 +412,7 @@ function SettingsPanel({ onClose, token }) {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '32px 24px', maxWidth: 720, width: '100%', margin: '0 auto', boxSizing: 'border-box', minHeight: 0 }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '32px 24px', maxWidth: 720, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
 
         {/* Trigger scan section */}
         <div style={{ background: '#111413', border: '1px solid #1e2220', borderRadius: 6, padding: '20px 24px', marginBottom: 32 }}>
@@ -522,11 +592,40 @@ function ValuationTool({ onClose }) {
   )
 }
 
+function ImageCarousel({ images, height = 160 }) {
+  const [idx, setIdx] = useState(0)
+  if (!images || images.length === 0) {
+    return (
+      <div style={{ height, background: '#080a09', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="40" height="40" viewBox="0 0 36 36" fill="none" style={{ opacity: 0.1 }}><rect x="4" y="10" width="28" height="18" rx="2" stroke="#dde0d8" strokeWidth="1.5"/><circle cx="11" cy="26" r="3" stroke="#dde0d8" strokeWidth="1.5"/><circle cx="25" cy="26" r="3" stroke="#dde0d8" strokeWidth="1.5"/><path d="M4 16h28" stroke="#dde0d8" strokeWidth="1"/></svg>
+      </div>
+    )
+  }
+  return (
+    <div style={{ position: 'relative', height, overflow: 'hidden', background: '#080a09', cursor: images.length > 1 ? 'pointer' : 'default' }}
+      onClick={() => images.length > 1 && setIdx(i => (i + 1) % images.length)}
+    >
+      <img src={images[idx]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} onError={e => e.target.style.display='none'} />
+      {images.length > 1 && (
+        <>
+          <div style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 4 }}>
+            {images.map((_, i) => (
+              <div key={i} onClick={e => { e.stopPropagation(); setIdx(i) }} style={{
+                width: i === idx ? 16 : 6, height: 6, borderRadius: 3,
+                background: i === idx ? IDS_GREEN : 'rgba(255,255,255,0.4)',
+                transition: 'all 0.2s', cursor: 'pointer',
+              }} />
+            ))}
+          </div>
+          <div style={{ position: 'absolute', top: '50%', right: 8, transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', color: '#fff', fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, padding: '3px 6px', borderRadius: 2 }}>
+            {idx + 1}/{images.length}
+          </div>
+        </>
+      )}
 function LotCard({ lot, savedIds, onSaveToggle, onDeepDive, token }) {
   const [saving, setSaving] = useState(false)
   const v = VERDICT[lot.verdict] || VERDICT['Watch']
   const c = COND[lot.condition_grade] || COND['Fair']
-  const img = lot.image_urls?.[0]
   const tl = timeLeft(lot.auction_end_time)
   const spread = lot.current_bid > 0 && lot.market_price_low ? Math.round((lot.market_price_low / lot.current_bid - 1) * 100) : null
   const isHighlight = lot.deal_score >= 75
@@ -550,21 +649,17 @@ function LotCard({ lot, savedIds, onSaveToggle, onDeepDive, token }) {
       display: 'flex', flexDirection: 'column',
       background: '#0d0f0c',
       borderLeft: isHighlight ? `3px solid ${IDS_GREEN}` : '3px solid transparent',
-      transition: 'background 0.1s',
+      transition: 'background 0.1s', position: 'relative',
     }}
     onMouseEnter={e => e.currentTarget.style.background = '#111413'}
     onMouseLeave={e => e.currentTarget.style.background = '#0d0f0c'}
     >
-      {/* Image */}
-      <div style={{ position: 'relative', height: 160, overflow: 'hidden', background: '#080a09', flexShrink: 0 }}>
-        {img
-          ? <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} onError={e => e.target.style.display='none'} />
-          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="40" height="40" viewBox="0 0 36 36" fill="none" style={{ opacity: 0.1 }}><rect x="4" y="10" width="28" height="18" rx="2" stroke="#dde0d8" strokeWidth="1.5"/><circle cx="11" cy="26" r="3" stroke="#dde0d8" strokeWidth="1.5"/><circle cx="25" cy="26" r="3" stroke="#dde0d8" strokeWidth="1.5"/><path d="M4 16h28" stroke="#dde0d8" strokeWidth="1"/></svg>
-            </div>
-        }
-        <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.9)', fontFamily: 'IBM Plex Mono, monospace', fontSize: 16, fontWeight: 500, padding: '4px 9px', borderRadius: 3, color: scoreColor(lot.deal_score), lineHeight: 1 }}>{lot.deal_score}</div>
-        {tl && <div style={{ position: 'absolute', bottom: 10, left: 10, fontSize: 11, color: tl.urgent ? '#f87171' : '#6b6f67', background: 'rgba(0,0,0,0.8)', padding: '2px 7px', borderRadius: 2 }}>{tl.urgent ? '⚑ ' : ''}{tl.text === 'Ended' ? 'ENDED' : `ends ${tl.text}`}</div>}
+      {/* Image carousel */}
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        <ImageCarousel images={lot.image_urls || []} height={160} />
+        <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.9)', fontFamily: 'IBM Plex Mono, monospace', fontSize: 16, fontWeight: 500, padding: '4px 9px', borderRadius: 3, color: scoreColor(lot.deal_score), lineHeight: 1, pointerEvents: 'none' }}>{lot.deal_score}</div>
+        {tl && <div style={{ position: 'absolute', bottom: 10, left: 10, fontSize: 11, color: tl.urgent ? '#f87171' : '#6b6f67', background: 'rgba(0,0,0,0.8)', padding: '2px 7px', borderRadius: 2, pointerEvents: 'none' }}>{tl.urgent ? '⚑ ' : ''}{tl.text === 'Ended' ? 'ENDED' : `ends ${tl.text}`}</div>}
+      </div>
       </div>
 
       {/* Body */}
