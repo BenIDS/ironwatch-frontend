@@ -278,6 +278,8 @@ function SettingsPanel({ onClose, token }) {
   const [saving, setSaving] = useState(false)
   const [input, setInput] = useState('')
   const [saved, setSaved] = useState(false)
+  const [scanning, setScanning] = useState(false)
+  const [scanResult, setScanResult] = useState(null)
 
   useEffect(() => {
     fetch(`${API}/scraper-config`, { headers: { 'Authorization': `Bearer ${token}` } })
@@ -316,8 +318,21 @@ function SettingsPanel({ onClose, token }) {
     setSaved(true)
   }
 
+  async function triggerScan() {
+    setScanning(true)
+    setScanResult(null)
+    try {
+      const res = await fetch(`${API}/scraper/run`, { method: 'GET' })
+      const data = await res.json()
+      setScanResult({ success: true, message: `Scan complete — ${data.lots_found || 0} lots found, ${data.lots_new || 0} new` })
+    } catch (err) {
+      setScanResult({ success: false, message: 'Scan failed — check Render logs' })
+    }
+    setScanning(false)
+  }
+
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#0b0d0c', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'fixed', inset: 0, background: '#0b0d0c', zIndex: 1000, display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <div style={{ borderBottom: '1px solid #1e2220', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #1e2220', color: '#6b6f67', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, padding: '6px 12px', borderRadius: 3, cursor: 'pointer' }}>← BACK</button>
         <div style={{ width: 1, height: 20, background: '#1e2220' }} />
@@ -327,11 +342,41 @@ function SettingsPanel({ onClose, token }) {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '32px 24px', maxWidth: 720, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '32px 24px', maxWidth: 720, width: '100%', margin: '0 auto', boxSizing: 'border-box', minHeight: 0 }}>
+
+        {/* Trigger scan section */}
+        <div style={{ background: '#111413', border: '1px solid #1e2220', borderRadius: 6, padding: '20px 24px', marginBottom: 32 }}>
+          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#5a5e58', letterSpacing: '0.08em', marginBottom: 8 }}>MANUAL SCAN</div>
+          <div style={{ fontSize: 13, color: '#6b6f67', lineHeight: 1.6, marginBottom: 16 }}>
+            Trigger an immediate scan across all auction platforms using your current keywords. This runs the full scraper pipeline and scores any new lots found.
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button onClick={triggerScan} disabled={scanning} style={{
+              background: scanning ? '#1c211b' : IDS_GREEN,
+              color: scanning ? '#3a3e38' : '#fff',
+              fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
+              fontSize: 14, letterSpacing: '0.06em',
+              padding: '12px 28px', borderRadius: 4, border: 'none', cursor: scanning ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              {scanning ? '⟳ SCANNING...' : '▶ RUN SCAN NOW'}
+            </button>
+            {scanResult && (
+              <span style={{
+                fontFamily: 'IBM Plex Mono, monospace', fontSize: 11,
+                color: scanResult.success ? IDS_GREEN : '#f87171',
+              }}>
+                {scanResult.success ? '✓' : '✗'} {scanResult.message}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Keywords section */}
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#5a5e58', letterSpacing: '0.08em', marginBottom: 8 }}>SEARCH KEYWORDS</div>
           <div style={{ fontSize: 13, color: '#6b6f67', lineHeight: 1.6, marginBottom: 20 }}>
-            IronWatch scans Bidspotter and other auction platforms for lots matching these keywords. Add anything you want to track — machine types, brands, model numbers, or specific equipment names.
+            IronWatch scans auction platforms for lots matching these keywords. Add anything you want to track — machine types, brands, model numbers, or specific equipment names.
           </div>
 
           <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
@@ -352,11 +397,7 @@ function SettingsPanel({ onClose, token }) {
           ) : (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {keywords.map(k => (
-                <div key={k} style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  background: '#161a15', border: '1px solid #2a2e29',
-                  borderRadius: 4, padding: '6px 12px',
-                }}>
+                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#161a15', border: '1px solid #2a2e29', borderRadius: 4, padding: '6px 12px' }}>
                   <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#dde0d8' }}>{k}</span>
                   <button onClick={() => removeKeyword(k)} style={{ background: 'none', border: 'none', color: '#5a5e58', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '0 2px' }}
                     onMouseEnter={e => e.currentTarget.style.color = '#f87171'}
