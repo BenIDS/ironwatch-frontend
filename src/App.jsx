@@ -725,6 +725,11 @@ export default function App() {
   const [verdictFilter, setVerdictFilter] = useState('All')
   const [categoryFilter, setCategoryFilter] = useState('All')
   const [sortBy, setSortBy] = useState('score')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [locationFilter, setLocationFilter] = useState('All')
+  const [minPrice, setMinPrice] = useState('')
+  const [maxPrice, setMaxPrice] = useState('')
+  const [hideEnded, setHideEnded] = useState(true)
   const [deepDiveLot, setDeepDiveLot] = useState(null)
   const [showValuation, setShowValuation] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -753,13 +758,26 @@ export default function App() {
   }
 
   const categories = useMemo(() => ['All', ...[...new Set(lots.map(l => l.category).filter(Boolean))].sort()], [lots])
+  const locations = useMemo(() => ['All', ...[...new Set(lots.map(l => l.location).filter(Boolean))].sort()], [lots])
 
   const filtered = useMemo(() => {
     const source = activeTab === 'saved' ? savedLots : lots
+    const now = new Date()
     let out = source.filter(l => {
       if (l.deal_score < minScore) return false
       if (verdictFilter !== 'All' && l.verdict !== verdictFilter) return false
       if (categoryFilter !== 'All' && l.category !== categoryFilter) return false
+      if (locationFilter !== 'All' && l.location !== locationFilter) return false
+      if (hideEnded && l.auction_end_time && new Date(l.auction_end_time) < now) return false
+      if (minPrice && (l.market_price_low || 0) < Number(minPrice)) return false
+      if (maxPrice && (l.market_price_high || 0) > Number(maxPrice)) return false
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase()
+        const inTitle = l.title?.toLowerCase().includes(q)
+        const inLocation = l.location?.toLowerCase().includes(q)
+        const inPlatform = l.platform_name?.toLowerCase().includes(q)
+        if (!inTitle && !inLocation && !inPlatform) return false
+      }
       return true
     })
     if (sortBy === 'score') out = [...out].sort((a, b) => b.deal_score - a.deal_score)
@@ -767,7 +785,7 @@ export default function App() {
     if (sortBy === 'ending') out = [...out].sort((a, b) => new Date(a.auction_end_time) - new Date(b.auction_end_time))
     if (sortBy === 'bid') out = [...out].sort((a, b) => a.current_bid - b.current_bid)
     return out
-  }, [lots, savedLots, activeTab, minScore, verdictFilter, categoryFilter, sortBy])
+  }, [lots, savedLots, activeTab, minScore, verdictFilter, categoryFilter, sortBy, searchQuery, locationFilter, minPrice, maxPrice, hideEnded])
 
   const stats = useMemo(() => ({
     total: lots.length,
@@ -854,7 +872,19 @@ export default function App() {
               <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ background: 'transparent', border: 'none', borderBottom: activeTab === tab.key ? `2px solid ${IDS_GREEN}` : '2px solid transparent', color: activeTab === tab.key ? IDS_GREEN : '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, letterSpacing: '0.06em', padding: '12px 18px', cursor: 'pointer', transition: 'all 0.1s' }}>{tab.label}</button>
             ))}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '1px solid #1e2220', background: '#0d0f0c', flexWrap: 'wrap' }}>
+
+          {/* Search bar */}
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid #1e2220', background: '#0b0d0c' }}>
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search titles, locations, platforms..."
+              style={{ width: '100%', background: '#161a15', border: '1px solid #2a2e29', borderRadius: 4, padding: '9px 14px', color: '#dde0d8', fontSize: 13, fontFamily: 'Barlow, sans-serif', outline: 'none', boxSizing: 'border-box' }}
+            />
+          </div>
+
+          {/* Filters row 1 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderBottom: '1px solid #1e2220', background: '#0d0f0c', flexWrap: 'wrap' }}>
             <span style={{ fontSize: 10, color: '#5a5e58', letterSpacing: '0.06em' }}>VERDICT:</span>
             {['All', 'Strong Buy', 'Buy', 'Watch', 'Pass'].map(v => <Chip key={v} active={verdictFilter === v} onClick={() => setVerdictFilter(v)}>{v}</Chip>)}
             <div style={{ width: 1, height: 16, background: '#1e2220' }} />
@@ -865,11 +895,30 @@ export default function App() {
               <input type="range" min="0" max="95" step="5" value={minScore} onChange={e => setMinScore(Number(e.target.value))} style={{ width: 90, accentColor: IDS_GREEN }} />
             </div>
           </div>
+
+          {/* Filters row 2 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderBottom: '1px solid #1e2220', background: '#0b0d0c', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 10, color: '#5a5e58', letterSpacing: '0.06em' }}>MKT £:</span>
+            <input value={minPrice} onChange={e => setMinPrice(e.target.value)} placeholder="Min" style={{ width: 70, background: '#161a15', border: '1px solid #2a2e29', borderRadius: 3, padding: '4px 8px', color: '#dde0d8', fontSize: 12, fontFamily: 'IBM Plex Mono, monospace', outline: 'none' }} />
+            <span style={{ fontSize: 10, color: '#3a3e38' }}>—</span>
+            <input value={maxPrice} onChange={e => setMaxPrice(e.target.value)} placeholder="Max" style={{ width: 70, background: '#161a15', border: '1px solid #2a2e29', borderRadius: 3, padding: '4px 8px', color: '#dde0d8', fontSize: 12, fontFamily: 'IBM Plex Mono, monospace', outline: 'none' }} />
+            <div style={{ width: 1, height: 16, background: '#1e2220' }} />
+            <span style={{ fontSize: 10, color: '#5a5e58', letterSpacing: '0.06em' }}>LOCATION:</span>
+            <select value={locationFilter} onChange={e => setLocationFilter(e.target.value)} style={{ background: '#161a15', border: '1px solid #2a2e29', borderRadius: 3, padding: '4px 8px', color: '#dde0d8', fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', outline: 'none', cursor: 'pointer' }}>
+              {locations.map(l => <option key={l} value={l}>{l}</option>)}
+            </select>
+            <div style={{ width: 1, height: 16, background: '#1e2220' }} />
+            <button onClick={() => setHideEnded(h => !h)} style={{ background: hideEnded ? `rgba(111,195,42,0.15)` : 'transparent', border: `1px solid ${hideEnded ? IDS_GREEN : '#2a2e29'}`, color: hideEnded ? IDS_GREEN : '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', letterSpacing: '0.04em' }}>
+              {hideEnded ? '✓ HIDE ENDED' : 'SHOW ENDED'}
+            </button>
+            <span style={{ marginLeft: 'auto', fontSize: 10, color: '#2e3230', fontFamily: 'IBM Plex Mono, monospace' }}>{filtered.length} lots</span>
+          </div>
+
+          {/* Category row */}
           {activeTab === 'all' && (
             <div style={{ display: 'flex', gap: 6, padding: '8px 14px', borderBottom: '1px solid #1e2220', background: '#0b0d0c', flexWrap: 'wrap', alignItems: 'center' }}>
               <span style={{ fontSize: 10, color: '#5a5e58', letterSpacing: '0.06em' }}>CAT:</span>
               {categories.map(cat => <Chip key={cat} active={categoryFilter === cat} onClick={() => setCategoryFilter(cat)}>{cat.toUpperCase()}</Chip>)}
-              <span style={{ marginLeft: 'auto', fontSize: 10, color: '#2e3230', fontFamily: 'IBM Plex Mono, monospace' }}>{filtered.length} lots</span>
             </div>
           )}
           {loading && <div style={{ padding: 60, textAlign: 'center', fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#2e3230', letterSpacing: '0.1em' }}>SCANNING AUCTIONS...</div>}
