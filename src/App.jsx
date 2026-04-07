@@ -190,7 +190,7 @@ function AuthScreen({ onAuth }) {
       {/* IDS branding footer */}
       <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
         <div style={{ fontSize: 10, color: '#3a3e38', letterSpacing: '0.06em' }}>POWERED BY</div>
-        <img src="/ids-logo.png" alt="Intelligent Disposal Solutions" style={{ height: 44, opacity: 0.6, filter: 'brightness(1.2)' }} />
+        <img src="/ids-logo.png" alt="Intelligent Disposal Solutions" style={{ height: 28, opacity: 0.6, filter: 'brightness(1.2)' }} />
       </div>
     </div>
   )
@@ -389,40 +389,53 @@ function LotCard({ lot, savedIds, onSaveToggle, onDeepDive, token }) {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', borderBottom: '1px solid #1e2220', borderLeft: isHighlight ? `3px solid ${IDS_GREEN}` : '3px solid transparent', transition: 'background 0.1s', background: 'transparent' }}
-      onMouseEnter={e => e.currentTarget.style.background = '#111413'}
-      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      background: '#0d0f0c',
+      borderLeft: isHighlight ? `3px solid ${IDS_GREEN}` : '3px solid transparent',
+      transition: 'background 0.1s',
+    }}
+    onMouseEnter={e => e.currentTarget.style.background = '#111413'}
+    onMouseLeave={e => e.currentTarget.style.background = '#0d0f0c'}
     >
-      <div style={{ background: '#0d0f0c', borderRight: '1px solid #1e2220', position: 'relative', minHeight: 110, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {img ? <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0, opacity: 0.9 }} onError={e => e.target.style.display='none'} />
-          : <svg width="36" height="36" viewBox="0 0 36 36" fill="none" style={{ opacity: 0.15 }}><rect x="4" y="10" width="28" height="18" rx="2" stroke="#dde0d8" strokeWidth="1.5"/><circle cx="11" cy="26" r="3" stroke="#dde0d8" strokeWidth="1.5"/><circle cx="25" cy="26" r="3" stroke="#dde0d8" strokeWidth="1.5"/><path d="M4 16h28" stroke="#dde0d8" strokeWidth="1"/></svg>
+      {/* Image */}
+      <div style={{ position: 'relative', height: 160, overflow: 'hidden', background: '#080a09', flexShrink: 0 }}>
+        {img
+          ? <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} onError={e => e.target.style.display='none'} />
+          : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="40" height="40" viewBox="0 0 36 36" fill="none" style={{ opacity: 0.1 }}><rect x="4" y="10" width="28" height="18" rx="2" stroke="#dde0d8" strokeWidth="1.5"/><circle cx="11" cy="26" r="3" stroke="#dde0d8" strokeWidth="1.5"/><circle cx="25" cy="26" r="3" stroke="#dde0d8" strokeWidth="1.5"/><path d="M4 16h28" stroke="#dde0d8" strokeWidth="1"/></svg>
+            </div>
         }
-        <div style={{ position: 'absolute', bottom: 7, left: 7, background: 'rgba(0,0,0,0.9)', fontFamily: 'IBM Plex Mono, monospace', fontSize: 14, fontWeight: 500, padding: '3px 7px', borderRadius: 3, color: scoreColor(lot.deal_score), lineHeight: 1 }}>{lot.deal_score}</div>
+        <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.9)', fontFamily: 'IBM Plex Mono, monospace', fontSize: 16, fontWeight: 500, padding: '4px 9px', borderRadius: 3, color: scoreColor(lot.deal_score), lineHeight: 1 }}>{lot.deal_score}</div>
+        {tl && <div style={{ position: 'absolute', bottom: 10, left: 10, fontSize: 11, color: tl.urgent ? '#f87171' : '#6b6f67', background: 'rgba(0,0,0,0.8)', padding: '2px 7px', borderRadius: 2 }}>{tl.urgent ? '⚑ ' : ''}{tl.text === 'Ended' ? 'ENDED' : `ends ${tl.text}`}</div>}
       </div>
-      <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+      {/* Body */}
+      <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
         <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 15, fontWeight: 600, color: '#e8e8e4', lineHeight: 1.3, letterSpacing: '0.01em' }}>
-          {lot.title.length > 90 ? lot.title.slice(0, 90) + '…' : lot.title}
+          {lot.title.length > 80 ? lot.title.slice(0, 80) + '…' : lot.title}
         </div>
+
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 3, background: c.bg, color: c.color, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{lot.condition_grade}</span>
           <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 3, background: v.bg, color: v.color, border: `1px solid ${v.border}` }}>{lot.verdict}</span>
-          <span style={{ fontSize: 12, color: '#7a7d76' }}>{lot.location}</span>
-          {tl && <span style={{ fontSize: 12, color: tl.urgent ? '#f87171' : '#5a5e58' }}>{tl.urgent ? '⚑ ' : ''}{tl.text === 'Ended' ? 'ENDED' : `ends ${tl.text}`}</span>}
+          <span style={{ fontSize: 11, color: '#7a7d76' }}>{lot.location}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div>
-            <span style={{ fontSize: 11, color: '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', marginRight: 4 }}>BID</span>
-            <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 16, fontWeight: 500, color: lot.current_bid === 0 ? IDS_GREEN : '#e8e8e4' }}>{lot.current_bid === 0 ? 'No bids' : fmt(lot.current_bid)}</span>
+            <span style={{ fontSize: 10, color: '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', marginRight: 4 }}>BID</span>
+            <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 15, fontWeight: 500, color: lot.current_bid === 0 ? IDS_GREEN : '#e8e8e4' }}>{lot.current_bid === 0 ? 'No bids' : fmt(lot.current_bid)}</span>
           </div>
           <div>
-            <span style={{ fontSize: 11, color: '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', marginRight: 4 }}>MKT</span>
-            <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 14, color: '#22c55e' }}>{fmt(lot.market_price_low)}–{fmt(lot.market_price_high)}</span>
+            <span style={{ fontSize: 10, color: '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', marginRight: 4 }}>MKT</span>
+            <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 13, color: '#22c55e' }}>{fmt(lot.market_price_low)}–{fmt(lot.market_price_high)}</span>
           </div>
-          {spread != null && spread > 0 && <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, background: 'rgba(34,197,94,0.12)', color: '#22c55e', padding: '3px 8px', borderRadius: 3, fontWeight: 500 }}>+{spread}%</span>}
+          {spread != null && spread > 0 && <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, background: 'rgba(34,197,94,0.12)', color: '#22c55e', padding: '3px 7px', borderRadius: 3 }}>+{spread}%</span>}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-          <span style={{ fontSize: 10, color: '#5a5e58', border: '0.5px solid #2a2e29', padding: '2px 6px', borderRadius: 2, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{lot.platform_name}</span>
-          <button onClick={handleSaveToggle} disabled={saving} style={{ background: isSaved ? `rgba(111,195,42,0.15)` : 'transparent', border: `1px solid ${isSaved ? IDS_GREEN : '#2a2e29'}`, color: isSaved ? IDS_GREEN : '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', fontSize: 13, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', transition: 'all 0.15s' }}>{isSaved ? '★' : '☆'}</button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 'auto', paddingTop: 4 }}>
+          <button onClick={handleSaveToggle} disabled={saving} style={{ background: isSaved ? `rgba(111,195,42,0.15)` : 'transparent', border: `1px solid ${isSaved ? IDS_GREEN : '#2a2e29'}`, color: isSaved ? IDS_GREEN : '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', fontSize: 13, padding: '5px 10px', borderRadius: 3, cursor: 'pointer', transition: 'all 0.15s' }}>{isSaved ? '★' : '☆'}</button>
           <button onClick={() => onDeepDive(lot)}
             style={{ background: 'transparent', border: '1px solid #2a2e29', color: '#9a9e96', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600, fontSize: 12, letterSpacing: '0.05em', padding: '5px 12px', borderRadius: 3, cursor: 'pointer', transition: 'all 0.15s' }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = IDS_GREEN; e.currentTarget.style.color = IDS_GREEN }}
@@ -525,7 +538,7 @@ export default function App() {
 
         {/* IDS logo in header */}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <img src="/ids-logo.png" alt="IDS" style={{ height: 35, opacity: 0.5 }} />
+          <img src="/ids-logo.png" alt="IDS" style={{ height: 22, opacity: 0.5 }} />
         </div>
 
         <button onClick={() => setShowValuation(true)} style={{ background: 'transparent', border: `1px solid #2a2e29`, color: '#9a9e96', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600, fontSize: 12, letterSpacing: '0.06em', padding: '6px 14px', borderRadius: 3, cursor: 'pointer', transition: 'all 0.15s' }}
@@ -603,7 +616,9 @@ export default function App() {
           {error && <div style={{ margin: 16, padding: 14, background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 4, fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#f87171' }}>{error}</div>}
           {!loading && activeTab === 'saved' && savedIds.size === 0 && <div style={{ padding: 60, textAlign: 'center', fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#2e3230', letterSpacing: '0.08em' }}>NO SAVED LOTS YET — CLICK ☆ ON ANY LOT TO SAVE IT</div>}
           {!loading && filtered.length === 0 && !(activeTab === 'saved' && savedIds.size === 0) && <div style={{ padding: 60, textAlign: 'center', fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#2e3230', letterSpacing: '0.08em' }}>NO LOTS MATCH FILTERS</div>}
-          {!loading && filtered.map(lot => <LotCard key={lot.id} lot={lot} savedIds={savedIds} onSaveToggle={handleSaveToggle} onDeepDive={setDeepDiveLot} token={token} />)}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 1, background: '#1e2220' }}>
+            {!loading && filtered.map(lot => <LotCard key={lot.id} lot={lot} savedIds={savedIds} onSaveToggle={handleSaveToggle} onDeepDive={setDeepDiveLot} token={token} />)}
+          </div>
         </div>
 
         {/* Sidebar */}
@@ -638,7 +653,7 @@ export default function App() {
           {/* IDS branding in sidebar footer */}
           <div style={{ padding: '16px 14px', borderTop: '1px solid #1e2220', marginTop: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
             <div style={{ fontSize: 9, color: '#2e3230', letterSpacing: '0.06em' }}>POWERED BY</div>
-            <img src="/ids-logo.png" alt="Intelligent Disposal Solutions" style={{ height: 35, opacity: 0.35 }} />
+            <img src="/ids-logo.png" alt="Intelligent Disposal Solutions" style={{ height: 20, opacity: 0.35 }} />
           </div>
         </div>
       </div>
