@@ -19,6 +19,36 @@ const COND = {
 const IDS_GREEN = '#6fc32a'
 const IDS_TEAL = '#2abcb0'
 
+function IronWatchLogo({ size = 40 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="110,20 121.5,36.9 137.8,24.4 143.6,44.1 162.9,37.2 162.3,57.7 182.8,57.1 175.9,76.4 195.6,82.2 183.1,98.5 200,110 183.1,121.5 195.6,137.8 175.9,143.6 182.8,162.9 162.3,162.3 162.9,182.8 143.6,175.9 137.8,195.6 121.5,183.1 110,200 98.5,183.1 82.2,195.6 76.4,175.9 57.1,182.8 57.7,162.3 37.2,162.9 44.1,143.6 24.4,137.8 36.9,121.5 20,110 36.9,98.5 24.4,82.2 44.1,76.4 37.2,57.1 57.7,57.7 57.1,37.2 76.4,44.1 82.2,24.4 98.5,36.9" fill="none" stroke="#6fc32a" strokeWidth="2" strokeLinejoin="round"/>
+      <circle cx="110" cy="110" r="82" fill="none" stroke="#6fc32a" strokeWidth="1.5"/>
+      <circle cx="110" cy="110" r="56" fill="none" stroke="#6fc32a" strokeWidth="0.75" opacity="0.4"/>
+      <circle cx="110" cy="54" r="3.5" fill="none" stroke="#6fc32a" strokeWidth="1.2" opacity="0.7"/>
+      <circle cx="139" cy="60" r="3.5" fill="none" stroke="#6fc32a" strokeWidth="1.2" opacity="0.7"/>
+      <circle cx="159" cy="81" r="3.5" fill="none" stroke="#6fc32a" strokeWidth="1.2" opacity="0.7"/>
+      <circle cx="166" cy="110" r="3.5" fill="none" stroke="#6fc32a" strokeWidth="1.2" opacity="0.7"/>
+      <circle cx="159" cy="139" r="3.5" fill="none" stroke="#6fc32a" strokeWidth="1.2" opacity="0.7"/>
+      <circle cx="139" cy="160" r="3.5" fill="none" stroke="#6fc32a" strokeWidth="1.2" opacity="0.7"/>
+      <circle cx="110" cy="166" r="3.5" fill="none" stroke="#6fc32a" strokeWidth="1.2" opacity="0.7"/>
+      <circle cx="81" cy="160" r="3.5" fill="none" stroke="#6fc32a" strokeWidth="1.2" opacity="0.7"/>
+      <circle cx="61" cy="139" r="3.5" fill="none" stroke="#6fc32a" strokeWidth="1.2" opacity="0.7"/>
+      <circle cx="54" cy="110" r="3.5" fill="none" stroke="#6fc32a" strokeWidth="1.2" opacity="0.7"/>
+      <circle cx="61" cy="81" r="3.5" fill="none" stroke="#6fc32a" strokeWidth="1.2" opacity="0.7"/>
+      <circle cx="81" cy="60" r="3.5" fill="none" stroke="#6fc32a" strokeWidth="1.2" opacity="0.7"/>
+      <path d="M44,110 Q110,62 176,110 Q110,158 44,110Z" fill="none" stroke="#6fc32a" strokeWidth="2"/>
+      <circle cx="110" cy="110" r="26" fill="none" stroke="#6fc32a" strokeWidth="1.5"/>
+      <circle cx="110" cy="110" r="11" fill="#6fc32a"/>
+      <circle cx="110" cy="110" r="4.5" fill="#0b0d0c"/>
+      <line x1="84" y1="110" x2="92" y2="110" stroke="#6fc32a" strokeWidth="1" opacity="0.5"/>
+      <line x1="128" y1="110" x2="136" y2="110" stroke="#6fc32a" strokeWidth="1" opacity="0.5"/>
+      <line x1="110" y1="84" x2="110" y2="92" stroke="#6fc32a" strokeWidth="1" opacity="0.5"/>
+      <line x1="110" y1="128" x2="110" y2="136" stroke="#6fc32a" strokeWidth="1" opacity="0.5"/>
+    </svg>
+  )
+}
+
 function timeLeft(iso) {
   if (!iso) return null
   const diff = new Date(iso) - new Date()
@@ -110,11 +140,12 @@ function AuthScreen({ onAuth }) {
     <div style={{ minHeight: '100vh', background: '#0b0d0c', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'Barlow, sans-serif', padding: '20px' }}>
 
       {/* IronWatch branding */}
-      <div style={{ marginBottom: 32, textAlign: 'center' }}>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 30, fontWeight: 500, letterSpacing: '0.12em', color: '#dde0d8' }}>
+      <div style={{ marginBottom: 32, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+        <IronWatchLogo size={90} />
+        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 28, fontWeight: 500, letterSpacing: '0.14em', color: '#dde0d8' }}>
           IRON<span style={{ color: IDS_GREEN }}>WATCH</span>
         </div>
-        <div style={{ fontSize: 11, color: '#5a5e58', letterSpacing: '0.1em', marginTop: 6 }}>INDUSTRIAL SURPLUS INTELLIGENCE</div>
+        <div style={{ fontSize: 11, color: '#5a5e58', letterSpacing: '0.1em' }}>INDUSTRIAL SURPLUS INTELLIGENCE</div>
       </div>
 
       {/* Login card */}
@@ -159,7 +190,7 @@ function AuthScreen({ onAuth }) {
       {/* IDS branding footer */}
       <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
         <div style={{ fontSize: 10, color: '#3a3e38', letterSpacing: '0.06em' }}>POWERED BY</div>
-        <img src="/ids-logo.png" alt="Intelligent Disposal Solutions" style={{ height: 28, opacity: 0.6, filter: 'brightness(1.2)' }} />
+        <img src="/ids-logo.png" alt="Intelligent Disposal Solutions" style={{ height: 44, opacity: 0.6, filter: 'brightness(1.2)' }} />
       </div>
     </div>
   )
@@ -485,13 +516,16 @@ export default function App() {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '0 16px', height: 52, borderBottom: '1px solid #1e2220', background: 'rgba(11,13,12,0.97)', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 17, fontWeight: 500, letterSpacing: '0.1em' }}>IRON<span style={{ color: IDS_GREEN }}>WATCH</span></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <IronWatchLogo size={32} />
+          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 17, fontWeight: 500, letterSpacing: '0.1em' }}>IRON<span style={{ color: IDS_GREEN }}>WATCH</span></div>
+        </div>
         <div style={{ width: 1, height: 16, background: '#1e2220' }} />
         <div style={{ fontSize: 11, color: '#5a5e58', letterSpacing: '0.06em' }}>INDUSTRIAL SURPLUS INTELLIGENCE</div>
 
         {/* IDS logo in header */}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <img src="/ids-logo.png" alt="IDS" style={{ height: 22, opacity: 0.5 }} />
+          <img src="/ids-logo.png" alt="IDS" style={{ height: 35, opacity: 0.5 }} />
         </div>
 
         <button onClick={() => setShowValuation(true)} style={{ background: 'transparent', border: `1px solid #2a2e29`, color: '#9a9e96', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600, fontSize: 12, letterSpacing: '0.06em', padding: '6px 14px', borderRadius: 3, cursor: 'pointer', transition: 'all 0.15s' }}
@@ -604,7 +638,7 @@ export default function App() {
           {/* IDS branding in sidebar footer */}
           <div style={{ padding: '16px 14px', borderTop: '1px solid #1e2220', marginTop: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
             <div style={{ fontSize: 9, color: '#2e3230', letterSpacing: '0.06em' }}>POWERED BY</div>
-            <img src="/ids-logo.png" alt="Intelligent Disposal Solutions" style={{ height: 20, opacity: 0.35 }} />
+            <img src="/ids-logo.png" alt="Intelligent Disposal Solutions" style={{ height: 35, opacity: 0.35 }} />
           </div>
         </div>
       </div>
