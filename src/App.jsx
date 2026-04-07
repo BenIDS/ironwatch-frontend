@@ -622,6 +622,9 @@ function ImageCarousel({ images, height = 160 }) {
           </div>
         </>
       )}
+    </div>
+  )
+}
 function LotCard({ lot, savedIds, onSaveToggle, onDeepDive, token }) {
   const [saving, setSaving] = useState(false)
   const v = VERDICT[lot.verdict] || VERDICT['Watch']
