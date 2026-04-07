@@ -663,7 +663,6 @@ function LotCard({ lot, savedIds, onSaveToggle, onDeepDive, token }) {
         <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.9)', fontFamily: 'IBM Plex Mono, monospace', fontSize: 16, fontWeight: 500, padding: '4px 9px', borderRadius: 3, color: scoreColor(lot.deal_score), lineHeight: 1, pointerEvents: 'none' }}>{lot.deal_score}</div>
         {tl && <div style={{ position: 'absolute', bottom: 10, left: 10, fontSize: 11, color: tl.urgent ? '#f87171' : '#6b6f67', background: 'rgba(0,0,0,0.8)', padding: '2px 7px', borderRadius: 2, pointerEvents: 'none' }}>{tl.urgent ? '⚑ ' : ''}{tl.text === 'Ended' ? 'ENDED' : `ends ${tl.text}`}</div>}
       </div>
-      </div>
 
       {/* Body */}
       <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
