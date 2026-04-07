@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 
 const API = 'https://ironwatch-3906.onrender.com/api/v1'
-const MODEL = 'claude-sonnet-4-20250514'
 
 const VERDICT = {
   'Strong Buy': { color: '#22c55e', bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.4)' },
@@ -16,6 +15,9 @@ const COND = {
   'Poor':      { bg: 'rgba(248,113,113,0.15)', color: '#f87171' },
   'Scrap':     { bg: 'rgba(239,68,68,0.15)', color: '#ef4444' },
 }
+
+const IDS_GREEN = '#6fc32a'
+const IDS_TEAL = '#2abcb0'
 
 function timeLeft(iso) {
   if (!iso) return null
@@ -63,7 +65,7 @@ ${(lot.watch_points || []).map(w => '- ' + w).join('\n')}
 Give your honest dealer assessment. Be direct and practical.`
 }
 
-async function callAI(messages, systemPrompt, token) {
+async function callAI(messages, systemPrompt) {
   const res = await fetch(`${API}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -105,21 +107,24 @@ function AuthScreen({ onAuth }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0b0d0c', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'Barlow, sans-serif' }}>
-      <div style={{ marginBottom: 40, textAlign: 'center' }}>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 28, fontWeight: 500, letterSpacing: '0.1em', color: '#dde0d8' }}>
-          IRON<span style={{ color: '#e8a020' }}>WATCH</span>
+    <div style={{ minHeight: '100vh', background: '#0b0d0c', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'Barlow, sans-serif', padding: '20px' }}>
+
+      {/* IronWatch branding */}
+      <div style={{ marginBottom: 32, textAlign: 'center' }}>
+        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 30, fontWeight: 500, letterSpacing: '0.12em', color: '#dde0d8' }}>
+          IRON<span style={{ color: IDS_GREEN }}>WATCH</span>
         </div>
-        <div style={{ fontSize: 12, color: '#5a5e58', letterSpacing: '0.08em', marginTop: 6 }}>INDUSTRIAL SURPLUS INTELLIGENCE</div>
+        <div style={{ fontSize: 11, color: '#5a5e58', letterSpacing: '0.1em', marginTop: 6 }}>INDUSTRIAL SURPLUS INTELLIGENCE</div>
       </div>
 
-      <div style={{ background: '#111413', border: '1px solid #1e2220', borderRadius: 6, padding: '32px 36px', width: '100%', maxWidth: 380 }}>
+      {/* Login card */}
+      <div style={{ background: '#111413', border: '1px solid #1e2220', borderRadius: 8, padding: '32px 36px', width: '100%', maxWidth: 380 }}>
         <div style={{ display: 'flex', marginBottom: 24, borderBottom: '1px solid #1e2220' }}>
           {['login', 'register'].map(m => (
             <button key={m} onClick={() => { setMode(m); setError('') }} style={{
               flex: 1, background: 'transparent', border: 'none',
-              borderBottom: mode === m ? '2px solid #e8a020' : '2px solid transparent',
-              color: mode === m ? '#e8a020' : '#5a5e58',
+              borderBottom: mode === m ? `2px solid ${IDS_GREEN}` : '2px solid transparent',
+              color: mode === m ? IDS_GREEN : '#5a5e58',
               fontFamily: 'IBM Plex Mono, monospace', fontSize: 11,
               letterSpacing: '0.06em', padding: '8px', cursor: 'pointer',
               textTransform: 'uppercase',
@@ -145,10 +150,16 @@ function AuthScreen({ onAuth }) {
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required style={{ width: '100%', background: '#0b0d0c', border: '1px solid #2a2e29', borderRadius: 4, padding: '10px 12px', color: '#dde0d8', fontSize: 14, fontFamily: 'Barlow, sans-serif', outline: 'none', boxSizing: 'border-box' }} />
           </div>
           {error && <div style={{ marginBottom: 16, padding: '8px 12px', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 4, fontSize: 13, color: '#f87171' }}>{error}</div>}
-          <button type="submit" disabled={loading} style={{ width: '100%', background: loading ? '#1c211b' : '#e8a020', color: loading ? '#3a3e38' : '#0b0d0c', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 14, letterSpacing: '0.06em', padding: '12px', borderRadius: 4, border: 'none', cursor: loading ? 'default' : 'pointer' }}>
+          <button type="submit" disabled={loading} style={{ width: '100%', background: loading ? '#1c211b' : IDS_GREEN, color: loading ? '#3a3e38' : '#fff', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 14, letterSpacing: '0.06em', padding: '12px', borderRadius: 4, border: 'none', cursor: loading ? 'default' : 'pointer' }}>
             {loading ? 'PLEASE WAIT...' : mode === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT'}
           </button>
         </form>
+      </div>
+
+      {/* IDS branding footer */}
+      <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize: 10, color: '#3a3e38', letterSpacing: '0.06em' }}>POWERED BY</div>
+        <img src="/ids-logo.png" alt="Intelligent Disposal Solutions" style={{ height: 28, opacity: 0.6, filter: 'brightness(1.2)' }} />
       </div>
     </div>
   )
@@ -163,7 +174,7 @@ function ChatOverlay({ lot, onClose, token }) {
 
   useEffect(() => {
     setLoading(true)
-    callAI([{ role: 'user', content: 'Give me your honest dealer assessment of this lot. Would you buy it?' }], system, token)
+    callAI([{ role: 'user', content: 'Give me your honest dealer assessment of this lot. Would you buy it?' }], system)
       .then(text => {
         setMessages([
           { role: 'user', content: 'Give me your honest dealer assessment of this lot. Would you buy it?' },
@@ -187,7 +198,7 @@ function ChatOverlay({ lot, onClose, token }) {
     setMessages(newMessages)
     setInput('')
     setLoading(true)
-    const reply = await callAI(newMessages, system, token)
+    const reply = await callAI(newMessages, system)
     setMessages(prev => [...prev, { role: 'assistant', content: reply }])
     setLoading(false)
   }
@@ -197,9 +208,9 @@ function ChatOverlay({ lot, onClose, token }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0b0d0c', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ borderBottom: '1px solid #252923', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #252923', color: '#6b6f67', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, padding: '6px 12px', borderRadius: 3, cursor: 'pointer' }}>← BACK</button>
-        <div style={{ width: 1, height: 20, background: '#252923' }} />
+      <div style={{ borderBottom: '1px solid #1e2220', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <button onClick={onClose} style={{ background: 'transparent', border: `1px solid #1e2220`, color: '#6b6f67', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, padding: '6px 12px', borderRadius: 3, cursor: 'pointer' }}>← BACK</button>
+        <div style={{ width: 1, height: 20, background: '#1e2220' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 15, fontWeight: 600, color: '#dde0d8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lot.title}</div>
           <div style={{ display: 'flex', gap: 10, marginTop: 2 }}>
@@ -209,28 +220,28 @@ function ChatOverlay({ lot, onClose, token }) {
             {spread != null && spread > 0 && <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#22c55e' }}>+{spread}%</span>}
           </div>
         </div>
-        <a href={lot.url} target="_blank" rel="noopener noreferrer" style={{ background: '#e8a020', color: '#0b0d0c', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 3, textDecoration: 'none', letterSpacing: '0.05em', flexShrink: 0 }}>GO TO AUCTION →</a>
+        <a href={lot.url} target="_blank" rel="noopener noreferrer" style={{ background: IDS_GREEN, color: '#fff', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 12, padding: '8px 14px', borderRadius: 3, textDecoration: 'none', letterSpacing: '0.05em', flexShrink: 0 }}>GO TO AUCTION →</a>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', maxWidth: 760, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         {messages.length === 0 && loading && <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#3a3e38', letterSpacing: '0.08em', paddingTop: 20 }}>DEALER IS ASSESSING THE LOT...</div>}
         {messages.map((m, i) => (
           <div key={i} style={{ marginBottom: 20 }}>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: m.role === 'user' ? '#60a5fa' : '#e8a020', letterSpacing: '0.08em', marginBottom: 6 }}>{m.role === 'user' ? 'YOU' : 'DEALER AGENT'}</div>
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: m.role === 'user' ? '#60a5fa' : IDS_GREEN, letterSpacing: '0.08em', marginBottom: 6 }}>{m.role === 'user' ? 'YOU' : 'DEALER AGENT'}</div>
             <div style={{ fontSize: 14, lineHeight: 1.65, color: m.role === 'user' ? '#9a9e96' : '#dde0d8', whiteSpace: 'pre-wrap' }}>{m.content}</div>
           </div>
         ))}
         {loading && messages.length > 0 && <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#3a3e38', letterSpacing: '0.08em' }}>THINKING...</div>}
         <div ref={bottomRef} />
       </div>
-      <div style={{ borderTop: '1px solid #252923', padding: '12px 16px', display: 'flex', gap: 10, maxWidth: 760, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+      <div style={{ borderTop: '1px solid #1e2220', padding: '12px 16px', display: 'flex', gap: 10, maxWidth: 760, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()} placeholder="Ask the dealer anything about this lot..." style={{ flex: 1, background: '#161a15', border: '1px solid #2a2e29', borderRadius: 4, padding: '10px 14px', color: '#dde0d8', fontSize: 14, fontFamily: 'Barlow, sans-serif', outline: 'none' }} />
-        <button onClick={send} disabled={loading || !input.trim()} style={{ background: loading || !input.trim() ? '#1c211b' : '#e8a020', color: loading || !input.trim() ? '#3a3e38' : '#0b0d0c', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 13, padding: '10px 20px', borderRadius: 4, border: 'none', cursor: 'pointer', letterSpacing: '0.05em' }}>SEND</button>
+        <button onClick={send} disabled={loading || !input.trim()} style={{ background: loading || !input.trim() ? '#1c211b' : IDS_GREEN, color: loading || !input.trim() ? '#3a3e38' : '#fff', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 13, padding: '10px 20px', borderRadius: 4, border: 'none', cursor: 'pointer', letterSpacing: '0.05em' }}>SEND</button>
       </div>
     </div>
   )
 }
 
-function ValuationTool({ onClose, token }) {
+function ValuationTool({ onClose }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -271,25 +282,25 @@ function ValuationTool({ onClose, token }) {
     setMessages(prev => [...prev, displayMsg])
     setImages([]); setInput('')
     setLoading(true)
-    const reply = await callAI([...apiHistory, apiMsg], VALUATION_SYSTEM, token)
+    const reply = await callAI([...apiHistory, apiMsg], VALUATION_SYSTEM)
     setMessages(prev => [...prev, { role: 'assistant', content: reply }])
     setLoading(false)
   }
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0b0d0c', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ borderBottom: '1px solid #252923', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #252923', color: '#6b6f67', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, padding: '6px 12px', borderRadius: 3, cursor: 'pointer' }}>← BACK</button>
-        <div style={{ width: 1, height: 20, background: '#252923' }} />
+      <div style={{ borderBottom: '1px solid #1e2220', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #1e2220', color: '#6b6f67', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, padding: '6px 12px', borderRadius: 3, cursor: 'pointer' }}>← BACK</button>
+        <div style={{ width: 1, height: 20, background: '#1e2220' }} />
         <div>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 14, fontWeight: 500, color: '#e8a020', letterSpacing: '0.08em' }}>VALUATION TOOL</div>
+          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 14, fontWeight: 500, color: IDS_GREEN, letterSpacing: '0.08em' }}>VALUATION TOOL</div>
           <div style={{ fontSize: 11, color: '#6b6f67', marginTop: 1 }}>Upload photos for an instant dealer valuation</div>
         </div>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 16px', maxWidth: 760, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         {messages.map((m, i) => (
           <div key={i} style={{ marginBottom: 20 }}>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: m.role === 'user' ? '#60a5fa' : '#e8a020', letterSpacing: '0.08em', marginBottom: 6 }}>{m.role === 'user' ? 'YOU' : 'DEALER AGENT'}</div>
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: m.role === 'user' ? '#60a5fa' : IDS_GREEN, letterSpacing: '0.08em', marginBottom: 6 }}>{m.role === 'user' ? 'YOU' : 'DEALER AGENT'}</div>
             {m.images?.length > 0 && (
               <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
                 {m.images.map((name, j) => <span key={j} style={{ fontSize: 10, color: '#6b6f67', background: '#161a15', border: '1px solid #252923', padding: '3px 8px', borderRadius: 3, fontFamily: 'IBM Plex Mono, monospace' }}>📎 {name}</span>)}
@@ -301,12 +312,12 @@ function ValuationTool({ onClose, token }) {
         {loading && <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#3a3e38', letterSpacing: '0.08em' }}>ASSESSING...</div>}
         <div ref={bottomRef} />
       </div>
-      <div style={{ borderTop: '1px solid #252923', padding: '12px 16px', maxWidth: 760, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+      <div style={{ borderTop: '1px solid #1e2220', padding: '12px 16px', maxWidth: 760, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         {images.length > 0 && (
           <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
             {images.map((img, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#161a15', border: '1px solid #2a2e29', borderRadius: 3, padding: '3px 8px' }}>
-                <span style={{ fontSize: 10, color: '#e8a020', fontFamily: 'IBM Plex Mono, monospace' }}>📎 {img.name}</span>
+                <span style={{ fontSize: 10, color: IDS_GREEN, fontFamily: 'IBM Plex Mono, monospace' }}>📎 {img.name}</span>
                 <button onClick={() => setImages(prev => prev.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: '#6b6f67', cursor: 'pointer', fontSize: 12 }}>×</button>
               </div>
             ))}
@@ -316,7 +327,7 @@ function ValuationTool({ onClose, token }) {
           <input ref={fileRef} type="file" accept="image/*" multiple onChange={e => handleFiles(e.target.files)} style={{ display: 'none' }} />
           <button onClick={() => fileRef.current?.click()} style={{ background: 'transparent', border: '1px solid #2a2e29', color: '#6b6f67', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, padding: '10px 14px', borderRadius: 4, cursor: 'pointer', whiteSpace: 'nowrap' }}>📎 PHOTO</button>
           <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()} placeholder="Describe the equipment or ask anything..." style={{ flex: 1, background: '#161a15', border: '1px solid #2a2e29', borderRadius: 4, padding: '10px 14px', color: '#dde0d8', fontSize: 14, fontFamily: 'Barlow, sans-serif', outline: 'none' }} />
-          <button onClick={send} disabled={loading || (!input.trim() && images.length === 0)} style={{ background: '#e8a020', color: '#0b0d0c', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 13, padding: '10px 20px', borderRadius: 4, border: 'none', cursor: 'pointer', letterSpacing: '0.05em' }}>SEND</button>
+          <button onClick={send} disabled={loading || (!input.trim() && images.length === 0)} style={{ background: IDS_GREEN, color: '#fff', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 13, padding: '10px 20px', borderRadius: 4, border: 'none', cursor: 'pointer', letterSpacing: '0.05em' }}>SEND</button>
         </div>
       </div>
     </div>
@@ -347,7 +358,7 @@ function LotCard({ lot, savedIds, onSaveToggle, onDeepDive, token }) {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', borderBottom: '1px solid #1e2220', borderLeft: isHighlight ? '3px solid #e8a020' : '3px solid transparent', transition: 'background 0.1s', background: 'transparent' }}
+    <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', borderBottom: '1px solid #1e2220', borderLeft: isHighlight ? `3px solid ${IDS_GREEN}` : '3px solid transparent', transition: 'background 0.1s', background: 'transparent' }}
       onMouseEnter={e => e.currentTarget.style.background = '#111413'}
       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
     >
@@ -370,7 +381,7 @@ function LotCard({ lot, savedIds, onSaveToggle, onDeepDive, token }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           <div>
             <span style={{ fontSize: 11, color: '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', marginRight: 4 }}>BID</span>
-            <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 16, fontWeight: 500, color: lot.current_bid === 0 ? '#e8a020' : '#e8e8e4' }}>{lot.current_bid === 0 ? 'No bids' : fmt(lot.current_bid)}</span>
+            <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 16, fontWeight: 500, color: lot.current_bid === 0 ? IDS_GREEN : '#e8e8e4' }}>{lot.current_bid === 0 ? 'No bids' : fmt(lot.current_bid)}</span>
           </div>
           <div>
             <span style={{ fontSize: 11, color: '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', marginRight: 4 }}>MKT</span>
@@ -380,13 +391,13 @@ function LotCard({ lot, savedIds, onSaveToggle, onDeepDive, token }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
           <span style={{ fontSize: 10, color: '#5a5e58', border: '0.5px solid #2a2e29', padding: '2px 6px', borderRadius: 2, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{lot.platform_name}</span>
-          <button onClick={handleSaveToggle} disabled={saving} style={{ background: isSaved ? 'rgba(232,160,32,0.15)' : 'transparent', border: `1px solid ${isSaved ? '#e8a020' : '#2a2e29'}`, color: isSaved ? '#e8a020' : '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', fontSize: 13, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', transition: 'all 0.15s' }}>{isSaved ? '★' : '☆'}</button>
+          <button onClick={handleSaveToggle} disabled={saving} style={{ background: isSaved ? `rgba(111,195,42,0.15)` : 'transparent', border: `1px solid ${isSaved ? IDS_GREEN : '#2a2e29'}`, color: isSaved ? IDS_GREEN : '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', fontSize: 13, padding: '4px 10px', borderRadius: 3, cursor: 'pointer', transition: 'all 0.15s' }}>{isSaved ? '★' : '☆'}</button>
           <button onClick={() => onDeepDive(lot)}
             style={{ background: 'transparent', border: '1px solid #2a2e29', color: '#9a9e96', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600, fontSize: 12, letterSpacing: '0.05em', padding: '5px 12px', borderRadius: 3, cursor: 'pointer', transition: 'all 0.15s' }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#e8a020'; e.currentTarget.style.color = '#e8a020' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = IDS_GREEN; e.currentTarget.style.color = IDS_GREEN }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2e29'; e.currentTarget.style.color = '#9a9e96' }}
           >DEEP DIVE →</button>
-          <a href={lot.url} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: 12, background: '#e8a020', color: '#0b0d0c', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, letterSpacing: '0.05em', padding: '5px 14px', borderRadius: 3, textDecoration: 'none' }}>BID →</a>
+          <a href={lot.url} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: 12, background: IDS_GREEN, color: '#fff', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, letterSpacing: '0.05em', padding: '5px 14px', borderRadius: 3, textDecoration: 'none' }}>BID →</a>
         </div>
       </div>
     </div>
@@ -419,18 +430,10 @@ export default function App() {
   const [deepDiveLot, setDeepDiveLot] = useState(null)
   const [showValuation, setShowValuation] = useState(false)
 
-  function handleAuth(newToken, newUser) {
-    setToken(newToken)
-    setUser(newUser)
-  }
-
+  function handleAuth(newToken, newUser) { setToken(newToken); setUser(newUser) }
   function handleLogout() {
-    localStorage.removeItem('iw_token')
-    localStorage.removeItem('iw_user')
-    setToken(null)
-    setUser(null)
-    setSavedLots([])
-    setSavedIds(new Set())
+    localStorage.removeItem('iw_token'); localStorage.removeItem('iw_user')
+    setToken(null); setUser(null); setSavedLots([]); setSavedIds(new Set())
   }
 
   useEffect(() => {
@@ -441,21 +444,13 @@ export default function App() {
       .catch(() => { setError('Could not load lots'); setLoading(false) })
     fetch(`${API}/saved-lots`, { headers: { 'Authorization': `Bearer ${token}` } })
       .then(r => r.json())
-      .then(data => {
-        const sl = data.lots || []
-        setSavedLots(sl)
-        setSavedIds(new Set(sl.map(l => l.id)))
-      })
+      .then(data => { const sl = data.lots || []; setSavedLots(sl); setSavedIds(new Set(sl.map(l => l.id))) })
   }, [token])
 
   function handleSaveToggle(lotId, nowSaved) {
     setSavedIds(prev => { const n = new Set(prev); nowSaved ? n.add(lotId) : n.delete(lotId); return n })
-    if (nowSaved) {
-      const lot = lots.find(l => l.id === lotId)
-      if (lot) setSavedLots(prev => [lot, ...prev.filter(l => l.id !== lotId)])
-    } else {
-      setSavedLots(prev => prev.filter(l => l.id !== lotId))
-    }
+    if (nowSaved) { const lot = lots.find(l => l.id === lotId); if (lot) setSavedLots(prev => [lot, ...prev.filter(l => l.id !== lotId)]) }
+    else setSavedLots(prev => prev.filter(l => l.id !== lotId))
   }
 
   const categories = useMemo(() => ['All', ...[...new Set(lots.map(l => l.category).filter(Boolean))].sort()], [lots])
@@ -487,42 +482,53 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0b0d0c', color: '#dde0d8', fontFamily: 'Barlow, sans-serif' }}>
+
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '0 16px', height: 52, borderBottom: '1px solid #1e2220', background: 'rgba(11,13,12,0.97)', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 17, fontWeight: 500, letterSpacing: '0.1em' }}>IRON<span style={{ color: '#e8a020' }}>WATCH</span></div>
+        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 17, fontWeight: 500, letterSpacing: '0.1em' }}>IRON<span style={{ color: IDS_GREEN }}>WATCH</span></div>
         <div style={{ width: 1, height: 16, background: '#1e2220' }} />
         <div style={{ fontSize: 11, color: '#5a5e58', letterSpacing: '0.06em' }}>INDUSTRIAL SURPLUS INTELLIGENCE</div>
-        <button onClick={() => setShowValuation(true)} style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #2a2e29', color: '#9a9e96', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600, fontSize: 12, letterSpacing: '0.06em', padding: '6px 14px', borderRadius: 3, cursor: 'pointer' }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#e8a020'; e.currentTarget.style.color = '#e8a020' }}
+
+        {/* IDS logo in header */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img src="/ids-logo.png" alt="IDS" style={{ height: 22, opacity: 0.5 }} />
+        </div>
+
+        <button onClick={() => setShowValuation(true)} style={{ background: 'transparent', border: `1px solid #2a2e29`, color: '#9a9e96', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600, fontSize: 12, letterSpacing: '0.06em', padding: '6px 14px', borderRadius: 3, cursor: 'pointer', transition: 'all 0.15s' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = IDS_GREEN; e.currentTarget.style.color = IDS_GREEN }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2e29'; e.currentTarget.style.color = '#9a9e96' }}
         >VALUATION TOOL</button>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e' }} />
+          <div style={{ width: 7, height: 7, borderRadius: '50%', background: IDS_GREEN }} />
           <span style={{ fontSize: 11, color: '#5a5e58', fontFamily: 'IBM Plex Mono, monospace' }}>AGENT ACTIVE</span>
         </div>
         {!loading && <>
           <div style={{ width: 1, height: 16, background: '#1e2220' }} />
           <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#22c55e' }}>{stats.strongBuy} strong buy</span>
           <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#60a5fa' }}>{stats.total} lots</span>
-          <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#e8a020' }}>★ {savedIds.size}</span>
+          <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: IDS_GREEN }}>★ {savedIds.size}</span>
         </>}
         <div style={{ width: 1, height: 16, background: '#1e2220' }} />
         <span style={{ fontSize: 11, color: '#5a5e58' }}>{user?.name || user?.email}</span>
         <button onClick={handleLogout} style={{ background: 'transparent', border: '0.5px solid #2a2e29', color: '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, padding: '4px 8px', borderRadius: 2, cursor: 'pointer' }}>OUT</button>
       </div>
 
+      {/* Ticker */}
       <div style={{ overflow: 'hidden', borderBottom: '1px solid #1e2220', background: '#0d0f0c', height: 28 }}>
         <div style={{ display: 'inline-flex', gap: 40, padding: '6px 16px', animation: 'ticker 40s linear infinite', whiteSpace: 'nowrap' }}>
-          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((t, i) => <span key={i} style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e3230' }}>{t} — <span style={{ color: '#e8a020' }}>LIVE</span></span>)}
+          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((t, i) => <span key={i} style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e3230' }}>{t} — <span style={{ color: IDS_GREEN }}>LIVE</span></span>)}
         </div>
       </div>
 
+      {/* Metrics */}
       {!loading && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', borderBottom: '1px solid #1e2220', background: '#0d0f0c' }}>
           {[
             { label: 'LOTS TRACKED', value: stats.total, sub: 'live from Bidspotter', color: '#dde0d8' },
             { label: 'STRONG BUYS', value: stats.strongBuy, sub: 'score ≥ 80', color: '#22c55e' },
-            { label: 'AVG DEAL SCORE', value: stats.avgScore, sub: 'across all lots', color: '#e8a020' },
-            { label: 'SAVED LOTS', value: savedIds.size, sub: 'in your watchlist', color: '#60a5fa' },
+            { label: 'AVG DEAL SCORE', value: stats.avgScore, sub: 'across all lots', color: IDS_GREEN },
+            { label: 'SAVED LOTS', value: savedIds.size, sub: 'in your watchlist', color: IDS_TEAL },
           ].map((m, i) => (
             <div key={i} style={{ padding: '12px 20px', borderRight: i < 3 ? '1px solid #1e2220' : 'none' }}>
               <div style={{ fontSize: 10, color: '#5a5e58', letterSpacing: '0.08em', marginBottom: 5 }}>{m.label}</div>
@@ -533,11 +539,12 @@ export default function App() {
         </div>
       )}
 
+      {/* Main */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', minHeight: 'calc(100vh - 180px)' }}>
         <div style={{ borderRight: '1px solid #1e2220' }}>
           <div style={{ display: 'flex', borderBottom: '1px solid #1e2220', background: '#0d0f0c' }}>
             {[{ key: 'all', label: 'ALL LOTS' }, { key: 'saved', label: `★ SAVED (${savedIds.size})` }].map(tab => (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ background: 'transparent', border: 'none', borderBottom: activeTab === tab.key ? '2px solid #e8a020' : '2px solid transparent', color: activeTab === tab.key ? '#e8a020' : '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, letterSpacing: '0.06em', padding: '12px 18px', cursor: 'pointer', transition: 'all 0.1s' }}>{tab.label}</button>
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ background: 'transparent', border: 'none', borderBottom: activeTab === tab.key ? `2px solid ${IDS_GREEN}` : '2px solid transparent', color: activeTab === tab.key ? IDS_GREEN : '#5a5e58', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, letterSpacing: '0.06em', padding: '12px 18px', cursor: 'pointer', transition: 'all 0.1s' }}>{tab.label}</button>
             ))}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '1px solid #1e2220', background: '#0d0f0c', flexWrap: 'wrap' }}>
@@ -548,7 +555,7 @@ export default function App() {
             {[{ v: 'score', l: 'Score' }, { v: 'margin', l: 'Margin' }, { v: 'ending', l: 'Ending' }, { v: 'bid', l: 'Low bid' }].map(s => <Chip key={s.v} active={sortBy === s.v} onClick={() => setSortBy(s.v)}>{s.l}</Chip>)}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
               <span style={{ fontSize: 10, color: '#5a5e58', fontFamily: 'IBM Plex Mono, monospace' }}>MIN: <span style={{ color: scoreColor(minScore) }}>{minScore}</span></span>
-              <input type="range" min="0" max="95" step="5" value={minScore} onChange={e => setMinScore(Number(e.target.value))} style={{ width: 90, accentColor: '#e8a020' }} />
+              <input type="range" min="0" max="95" step="5" value={minScore} onChange={e => setMinScore(Number(e.target.value))} style={{ width: 90, accentColor: IDS_GREEN }} />
             </div>
           </div>
           {activeTab === 'all' && (
@@ -564,6 +571,8 @@ export default function App() {
           {!loading && filtered.length === 0 && !(activeTab === 'saved' && savedIds.size === 0) && <div style={{ padding: 60, textAlign: 'center', fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#2e3230', letterSpacing: '0.08em' }}>NO LOTS MATCH FILTERS</div>}
           {!loading && filtered.map(lot => <LotCard key={lot.id} lot={lot} savedIds={savedIds} onSaveToggle={handleSaveToggle} onDeepDive={setDeepDiveLot} token={token} />)}
         </div>
+
+        {/* Sidebar */}
         <div style={{ background: '#0d0f0c' }}>
           <div style={{ fontSize: 10, color: '#5a5e58', letterSpacing: '0.08em', padding: '12px 14px', borderBottom: '1px solid #1e2220' }}>AGENT ACTIVITY LOG</div>
           {ACTIVITY.map((a, i) => (
@@ -582,17 +591,24 @@ export default function App() {
                   <div style={{ fontSize: 11, color: '#9a9e96', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lot.title}</div>
                   <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: scoreColor(lot.deal_score), marginTop: 2 }}>{lot.deal_score}/100 · {lot.verdict}</div>
                 </div>
-                <a href={lot.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: '#e8a020', fontFamily: 'IBM Plex Mono, monospace', border: '0.5px solid rgba(232,160,32,0.3)', padding: '3px 6px', borderRadius: 2, whiteSpace: 'nowrap', textDecoration: 'none', flexShrink: 0 }}>BID →</a>
+                <a href={lot.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: IDS_GREEN, fontFamily: 'IBM Plex Mono, monospace', border: `0.5px solid rgba(111,195,42,0.3)`, padding: '3px 6px', borderRadius: 2, whiteSpace: 'nowrap', textDecoration: 'none', flexShrink: 0 }}>BID →</a>
               </div>
             ))
           }
           <div style={{ padding: '12px 14px', borderTop: '1px solid #1e2220', marginTop: 8 }}>
-            <button onClick={() => setShowValuation(true)} style={{ width: '100%', background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.25)', color: '#e8a020', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 12, letterSpacing: '0.06em', padding: '10px', borderRadius: 3, cursor: 'pointer' }}>
+            <button onClick={() => setShowValuation(true)} style={{ width: '100%', background: `rgba(111,195,42,0.08)`, border: `1px solid rgba(111,195,42,0.25)`, color: IDS_GREEN, fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 12, letterSpacing: '0.06em', padding: '10px', borderRadius: 3, cursor: 'pointer' }}>
               VALUATION TOOL →
             </button>
           </div>
+
+          {/* IDS branding in sidebar footer */}
+          <div style={{ padding: '16px 14px', borderTop: '1px solid #1e2220', marginTop: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 9, color: '#2e3230', letterSpacing: '0.06em' }}>POWERED BY</div>
+            <img src="/ids-logo.png" alt="Intelligent Disposal Solutions" style={{ height: 20, opacity: 0.35 }} />
+          </div>
         </div>
       </div>
+
       <style>{`@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}`}</style>
     </div>
   )
@@ -600,7 +616,7 @@ export default function App() {
 
 function Chip({ children, active, onClick }) {
   return (
-    <button onClick={onClick} style={{ background: active ? '#e8a020' : 'transparent', border: `0.5px solid ${active ? '#e8a020' : '#2a2e29'}`, color: active ? '#0b0d0c' : '#5a5e58', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: active ? 700 : 400, fontSize: 11, letterSpacing: '0.04em', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', transition: 'all 0.1s', whiteSpace: 'nowrap' }}>
+    <button onClick={onClick} style={{ background: active ? IDS_GREEN : 'transparent', border: `0.5px solid ${active ? IDS_GREEN : '#2a2e29'}`, color: active ? '#fff' : '#5a5e58', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: active ? 700 : 400, fontSize: 11, letterSpacing: '0.04em', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', transition: 'all 0.1s', whiteSpace: 'nowrap' }}>
       {children}
     </button>
   )
