@@ -272,6 +272,122 @@ function ChatOverlay({ lot, onClose, token }) {
   )
 }
 
+function SettingsPanel({ onClose, token }) {
+  const [keywords, setKeywords] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [input, setInput] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    fetch(`${API}/scraper-config`, { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(data => { setKeywords(data.keywords || []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  function addKeyword() {
+    const k = input.trim().toLowerCase()
+    if (!k || keywords.includes(k)) return
+    setKeywords(prev => [...prev, k])
+    setInput('')
+    setSaved(false)
+  }
+
+  function removeKeyword(k) {
+    setKeywords(prev => prev.filter(x => x !== k))
+    setSaved(false)
+  }
+
+  async function saveKeywords() {
+    setSaving(true)
+    await fetch(`${API}/scraper-config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ keywords }),
+    })
+    setSaving(false)
+    setSaved(true)
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#0b0d0c', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ borderBottom: '1px solid #1e2220', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #1e2220', color: '#6b6f67', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, padding: '6px 12px', borderRadius: 3, cursor: 'pointer' }}>← BACK</button>
+        <div style={{ width: 1, height: 20, background: '#1e2220' }} />
+        <div>
+          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 14, fontWeight: 500, color: IDS_GREEN, letterSpacing: '0.08em' }}>SCRAPER SETTINGS</div>
+          <div style={{ fontSize: 11, color: '#6b6f67', marginTop: 1 }}>Customise what IronWatch scans for</div>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '32px 24px', maxWidth: 720, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#5a5e58', letterSpacing: '0.08em', marginBottom: 8 }}>SEARCH KEYWORDS</div>
+          <div style={{ fontSize: 13, color: '#6b6f67', lineHeight: 1.6, marginBottom: 20 }}>
+            IronWatch scans Bidspotter and other auction platforms for lots matching these keywords. Add anything you want to track — machine types, brands, model numbers, or specific equipment names.
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addKeyword()}
+              placeholder="e.g. atlas copco, trumpf laser, perkins generator..."
+              style={{ flex: 1, background: '#161a15', border: '1px solid #2a2e29', borderRadius: 4, padding: '10px 14px', color: '#dde0d8', fontSize: 14, fontFamily: 'Barlow, sans-serif', outline: 'none' }}
+            />
+            <button onClick={addKeyword} style={{ background: IDS_GREEN, color: '#fff', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 13, padding: '10px 20px', borderRadius: 4, border: 'none', cursor: 'pointer', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+              ADD KEYWORD
+            </button>
+          </div>
+
+          {loading ? (
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#3a3e38', letterSpacing: '0.08em' }}>LOADING...</div>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {keywords.map(k => (
+                <div key={k} style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: '#161a15', border: '1px solid #2a2e29',
+                  borderRadius: 4, padding: '6px 12px',
+                }}>
+                  <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#dde0d8' }}>{k}</span>
+                  <button onClick={() => removeKeyword(k)} style={{ background: 'none', border: 'none', color: '#5a5e58', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '0 2px' }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#f87171'}
+                    onMouseLeave={e => e.currentTarget.style.color = '#5a5e58'}
+                  >×</button>
+                </div>
+              ))}
+              {keywords.length === 0 && (
+                <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#3a3e38' }}>No keywords yet — add some above</div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div style={{ borderTop: '1px solid #1e2220', paddingTop: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={saveKeywords} disabled={saving} style={{
+            background: saving ? '#1c211b' : IDS_GREEN,
+            color: saving ? '#3a3e38' : '#fff',
+            fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
+            fontSize: 14, letterSpacing: '0.06em',
+            padding: '12px 28px', borderRadius: 4, border: 'none', cursor: 'pointer',
+          }}>
+            {saving ? 'SAVING...' : 'SAVE KEYWORDS'}
+          </button>
+          {saved && <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: IDS_GREEN }}>✓ SAVED — takes effect on next scrape</span>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ValuationTool({ onClose }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -473,6 +589,7 @@ export default function App() {
   const [sortBy, setSortBy] = useState('score')
   const [deepDiveLot, setDeepDiveLot] = useState(null)
   const [showValuation, setShowValuation] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   function handleAuth(newToken, newUser) { setToken(newToken); setUser(newUser) }
   function handleLogout() {
@@ -523,6 +640,7 @@ export default function App() {
   if (!token) return <AuthScreen onAuth={handleAuth} />
   if (deepDiveLot) return <ChatOverlay lot={deepDiveLot} onClose={() => setDeepDiveLot(null)} token={token} />
   if (showValuation) return <ValuationTool onClose={() => setShowValuation(false)} token={token} />
+  if (showSettings) return <SettingsPanel onClose={() => setShowSettings(false)} token={token} />
 
   return (
     <div style={{ minHeight: '100vh', background: '#0b0d0c', color: '#dde0d8', fontFamily: 'Barlow, sans-serif' }}>
@@ -545,6 +663,10 @@ export default function App() {
           onMouseEnter={e => { e.currentTarget.style.borderColor = IDS_GREEN; e.currentTarget.style.color = IDS_GREEN }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2e29'; e.currentTarget.style.color = '#9a9e96' }}
         >VALUATION TOOL</button>
+        <button onClick={() => setShowSettings(true)} style={{ background: 'transparent', border: `1px solid #2a2e29`, color: '#9a9e96', fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 600, fontSize: 12, letterSpacing: '0.06em', padding: '6px 14px', borderRadius: 3, cursor: 'pointer', transition: 'all 0.15s' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = IDS_GREEN; e.currentTarget.style.color = IDS_GREEN }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2e29'; e.currentTarget.style.color = '#9a9e96' }}
+        >SETTINGS</button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{ width: 7, height: 7, borderRadius: '50%', background: IDS_GREEN }} />
